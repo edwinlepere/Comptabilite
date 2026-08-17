@@ -1,0 +1,50 @@
+{
+  "name": "comptabilite-maison",
+  "version": "1.0.0",
+  "description": "Application de comptabilité personnelle — budget, paiements, crédits, dépenses",
+  "author": "TechFixBuild",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start":        "electron .",
+    "build:win":    "electron-builder --win",
+    "build:linux":  "electron-builder --linux",
+    "build:mac":    "electron-builder --mac",
+    "build:all":    "electron-builder --win --linux",
+    "dist":         "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron":         "^31.0.0",
+    "electron-builder": "^24.13.0"
+  },
+  "build": {
+    "appId":       "com.techfixbuild.comptabilite-maison",
+    "productName": "Comptabilité Maison",
+    "icon":        "logo.png",
+    "files": [
+      "index.html",
+      "css/**",
+      "js/**",
+      "main.js",
+      "preload.js",
+      "assets/**",
+      "logo.png"
+    ],
+    "win": {
+      "icon": "logo.png",
+      "target": [
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Office"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}

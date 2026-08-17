@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comptabilité — Budget personnel</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Chart.js pour les graphiques -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- ═══════════════════════════════════════════════════════ SIDEBAR ══════════ -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <img src="logo.png" alt="" class="logo-icon">
+    <div>
+      <div class="logo-name">Comptabilité <span class="logo-version">v1.0</span></div>
+      <div class="logo-sub">Budget personnel</div>
+    </div>
+  </div>
+
+  <ul class="nav-links">
+    <li>
+      <div class="compte-switcher" id="compte-switcher">
+        <button class="cpt-arrow" onclick="switchCompte(-1)">&#8249;</button>
+        <div class="cpt-body">
+          <div class="cpt-top">
+            <img id="cpt-logo" src="" alt="" onerror="this.style.display='none'">
+            <span id="cpt-icon" style="display:none;font-size:18px"></span>
+            <span id="cpt-nom">—</span>
+          </div>
+          <span id="cpt-solde" class="cpt-solde">—</span>
+        </div>
+        <button class="cpt-arrow" onclick="switchCompte(1)">&#8250;</button>
+      </div>
+    </li>
+    <li class="nav-section-label">Navigation</li>
+    <li><a href="#" class="nav-item active" data-page="dashboard">
+      <span class="nav-icon">📊</span><span>Tableau de bord</span>
+    </a></li>
+    <li><a href="#" class="nav-item" data-page="revenus">
+      <span class="nav-icon">💰</span><span>Revenus</span>
+    </a></li>
+    <li><a href="#" class="nav-item" data-page="paiements">
+      <span class="nav-icon">📋</span><span>Paiements récurrents</span>
+    </a></li>
+    <li><a href="#" class="nav-item" data-page="credits">
+      <span class="nav-icon">💳</span><span>Crédits en cours</span>
+    </a></li>
+    <li><a href="#" class="nav-item" data-page="depenses">
+      <span class="nav-icon">🛒</span><span>Dépenses</span>
+    </a></li>
+    <li><a href="#" class="nav-item" data-page="bilan">
+      <span class="nav-icon">📈</span><span>Bilan</span>
+    </a></li>
+    <li><a href="#" class="nav-item" data-page="bilan-comptes">
+      <span class="nav-icon">🏦</span><span>Bilan des comptes</span>
+    </a></li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <a href="#" class="nav-item nav-item-settings" data-page="parametres">
+      <span class="nav-icon">⚙️</span><span>Paramètres</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════ MAIN ═════════════ -->
+<main class="main">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header class="header">
+    <button class="hamburger" id="hamburger" onclick="toggleSidebar()" title="Menu">☰</button>
+    <div class="month-nav">
+      <button class="btn-month" onclick="prevMonth()" title="Mois précédent">&#8249;</button>
+      <div class="month-nav-center">
+        <h2 id="currentMonth" class="clickable-month" onclick="toggleMonthPicker(event)" title="Cliquer pour choisir le mois">Août 2026 ▾</h2>
+        <div class="month-picker" id="month-picker">
+          <div class="mp-header">
+            <button class="mp-nav" onclick="pickerPrevYear(event)">&#8249;</button>
+            <span class="mp-year" id="mp-year">2026</span>
+            <button class="mp-nav" onclick="pickerNextYear(event)">&#8250;</button>
+          </div>
+          <div class="mp-grid" id="mp-grid"></div>
+        </div>
+      </div>
+      <button class="btn-month" onclick="nextMonth()" title="Mois suivant">&#8250;</button>
+    </div>
+
+    <div class="header-clock">
+      <div class="clock-time" id="clock-time">00:00:00</div>
+      <div class="clock-date" id="clock-date"></div>
+    </div>
+
+    <div class="header-balance">
+      <div class="bal-card inc bal-card-link" onclick="navigateTo('revenus')" title="Voir les revenus">
+        <span class="bal-label">Revenus <span class="bal-arrow">›</span></span>
+        <span class="bal-amount positive" id="hRevenu">0,00 €</span>
+      </div>
+      <div class="bal-card exp bal-card-link" onclick="navigateTo('depenses')" title="Voir les dépenses">
+        <span class="bal-label">Dépenses <span class="bal-arrow">›</span></span>
+        <span class="bal-amount" id="hDep">0,00 €</span>
+      </div>
+      <div class="bal-card warn bal-card-link" onclick="navigateTo('paiements')" title="Crédits + paiements non payés">
+        <span class="bal-label">Reste à payer <span class="bal-arrow">›</span></span>
+        <span class="bal-amount" id="hReste">0,00 €</span>
+      </div>
+      <div class="bal-card sol bal-card-link" onclick="navigateTo('bilan')" title="Voir le bilan mensuel">
+        <span class="bal-label">Solde actuel <span class="bal-arrow">›</span></span>
+        <span class="bal-amount" id="hSolde">0,00 €</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Pages ───────────────────────────────────────────────────────────── -->
+  <div class="content">
+
+    <!-- Page "avant mois de référence" -->
+    <div class="page" id="page-no-history">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:12px;color:var(--text-muted)">
+        <span style="font-size:48px">📅</span>
+        <p id="before-ref-msg" style="font-size:16px;font-weight:600;color:var(--text)"></p>
+        <p style="font-size:13px">Naviguez vers le mois de référence ou après pour voir les données.</p>
+      </div>
+    </div>
+
+    <!-- ════════════ DASHBOARD ════════════ -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-title">
+        <h1>Tableau de bord</h1>
+        <div class="page-actions">
+          <div class="dropdown-wrap" id="quick-add-wrap">
+            <button class="btn btn-primary dropdown-toggle" onclick="toggleQuickAdd()">
+              + Ajouter &nbsp;▾
+            </button>
+            <div class="dropdown-menu" id="quick-add-menu">
+              <button class="dropdown-item" onclick="quickAdd('revenu')">💰 Revenu</button>
+              <button class="dropdown-item" onclick="quickAdd('paiement')">📋 Paiement récurrent</button>
+              <button class="dropdown-item" onclick="quickAdd('credit')">💳 Crédit</button>
+              <button class="dropdown-item" onclick="quickAdd('depense')">🛒 Dépense</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flux du mois -->
+      <div class="summary-group-label">Flux du mois</div>
+      <div class="summary-grid">
+        <div class="s-card s-card-link" onclick="navigateTo('revenus')">
+          <div class="s-icon inc">💰</div>
+          <div><div class="s-label">Revenus</div><div class="d-amount positive" id="d-revenus">—</div></div>
+        </div>
+        <div class="s-card s-card-link" onclick="navigateTo('credits')">
+          <div class="s-icon pmt">💳</div>
+          <div><div class="s-label">Crédits</div><div class="d-amount" id="d-credits">—</div></div>
+        </div>
+        <div class="s-card s-card-link" onclick="navigateTo('paiements')">
+          <div class="s-icon pmt">📋</div>
+          <div><div class="s-label">Paiements récurrents</div><div class="d-amount" id="d-paiements">—</div></div>
+        </div>
+        <div class="s-card s-card-link" onclick="navigateTo('depenses')">
+          <div class="s-icon exp">🛒</div>
+          <div><div class="s-label">Dépenses variables</div><div class="d-amount" id="d-depenses">—</div></div>
+        </div>
+        <div class="s-card" id="d-reste-card">
+          <div class="s-icon pmt">💸</div>
+          <div><div class="s-label">Reste à payer</div><div class="d-amount negative" id="d-reste-amount">—</div></div>
+        </div>
+      </div>
+
+      <!-- Résultats -->
+      <div class="summary-group-label">Résultats</div>
+      <div class="summary-grid summary-grid-results">
+        <div class="s-card s-card-link" onclick="navigateTo('bilan')">
+          <div class="s-icon sol">📊</div>
+          <div><div class="s-label">Solde actuel</div><div class="s-sub">Après paiements réalisés</div><div class="d-amount" id="d-solde">—</div></div>
+        </div>
+        <div class="s-card s-card-link" onclick="navigateTo('bilan')">
+          <div class="s-icon sol">📈</div>
+          <div><div class="s-label">Solde estimé</div><div class="s-sub">Si tout est payé</div><div class="d-amount" id="d-solde-estime">—</div></div>
+        </div>
+      </div>
+
+      <!-- Progression paiements -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header" style="padding:16px 20px 10px">
+          <span class="card-title">Progression des paiements récurrents</span>
+        </div>
+        <div class="prog-wrap">
+          <div class="prog-bg"><div class="prog-fill" id="d-prog-bar" style="width:0%"></div></div>
+          <div class="prog-text" id="d-prog-text">0 paiements effectués</div>
+        </div>
+      </div>
+
+      <!-- Deux colonnes : paiements + graphique -->
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📋 Paiements ce mois</span>
+            <div class="sort-dropdown" id="pmt-sort-wrap">
+              <button class="sort-btn" id="pmt-sort-btn" onclick="togglePmtSortMenu(event)">↕ <span id="pmt-sort-label">Décroissant</span></button>
+            </div>
+          </div>
+          <div class="card-body" style="padding-top:10px">
+            <div id="d-pmt-list"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🛒 Répartition dépenses</span></div>
+          <div class="card-body">
+            <div id="dash-chart-wrap"><canvas id="dashChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dernières dépenses -->
+      <div class="card" style="margin-top:20px">
+        <div class="card-header" style="padding:16px 20px 0">
+          <span class="card-title">Dernières dépenses</span>
+          <button class="btn btn-sm btn-primary" onclick="navigateTo('depenses')">Voir tout</button>
+        </div>
+        <div class="card-body"><div id="d-dep-list"></div></div>
+      </div>
+    </div>
+
+    <!-- ════════════ REVENUS ════════════ -->
+    <div class="page" id="page-revenus">
+      <div class="page-title">
+        <h1>💰 Revenus</h1>
+        <div class="page-actions">
+          <button class="btn btn-primary" onclick="showRevenuModal()">+ Ajouter un revenu</button>
+        </div>
+      </div>
+
+      <div class="rev-stats">
+        <div class="total-card">
+          <div class="tc-icon rev">💰</div>
+          <div>
+            <div class="tc-lbl">Total revenus du mois</div>
+            <div class="tc-val positive" id="rev-total">0,00 €</div>
+          </div>
+        </div>
+        <div class="total-card">
+          <div class="tc-icon rev">📌</div>
+          <div>
+            <div class="tc-lbl">Nombre d'entrées</div>
+            <div class="tc-val" id="rev-count">0 entrée(s)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-bar" id="rev-filters"></div>
+      <div id="rev-list"></div>
+    </div>
+
+    <!-- ════════════ PAIEMENTS RÉCURRENTS ════════════ -->
+    <div class="page" id="page-paiements">
+      <div class="page-title">
+        <h1>📋 Paiements récurrents</h1>
+        <div class="page-actions">
+          <button class="btn btn-primary" onclick="showPaiementModal()">+ Ajouter un paiement</button>
+        </div>
+      </div>
+
+      <div class="pmt-stats">
+        <div class="stat-card">
+          <div class="stat-label">Total mensuel</div>
+          <div class="stat-value" id="pmt-total">0,00 €</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Déjà payé</div>
+          <div class="stat-value ok" id="pmt-paid">0,00 €</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Reste à payer</div>
+          <div class="stat-value warn" id="pmt-reste">0,00 €</div>
+        </div>
+      </div>
+
+      <div class="filter-bar" id="pmt-filters"></div>
+      <div id="pmt-grid" class="pmt-grid"></div>
+    </div>
+
+    <!-- ════════════ CRÉDITS ════════════ -->
+    <div class="page" id="page-credits">
+      <div class="page-title">
+        <h1>💳 Crédits en cours</h1>
+        <div class="page-actions">
+          <button class="btn btn-primary" onclick="showCreditModal()">+ Ajouter un crédit</button>
+        </div>
+      </div>
+
+      <div class="cred-stats">
+        <div class="total-card">
+          <div class="tc-icon dep">💳</div>
+          <div>
+            <div class="tc-lbl">Mensualités totales</div>
+            <div class="tc-val negative" id="cred-total">0,00 €</div>
+          </div>
+        </div>
+        <div class="total-card">
+          <div class="tc-icon dep">📌</div>
+          <div>
+            <div class="tc-lbl">Crédits actifs</div>
+            <div class="tc-val" id="cred-count">0 crédit(s)</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="cred-list" class="pmt-grid"></div>
+    </div>
+
+    <!-- ════════════ DÉPENSES ════════════ -->
+    <div class="page" id="page-depenses">
+      <div class="page-title">
+        <h1>🛒 Dépenses</h1>
+        <div class="page-actions">
+          <button class="btn btn-primary" onclick="showDepenseModal()">+ Ajouter une dépense</button>
+        </div>
+      </div>
+
+      <div class="dep-header">
+        <div class="total-card">
+          <div class="tc-icon dep">🛒</div>
+          <div>
+            <div class="tc-lbl">Total dépenses du mois</div>
+            <div class="tc-val negative" id="dep-total">0,00 €</div>
+          </div>
+        </div>
+        <div class="total-card">
+          <div class="tc-icon dep">📌</div>
+          <div>
+            <div class="tc-lbl">Nombre de dépenses</div>
+            <div class="tc-val" id="dep-count">0 dépense(s)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-bar" id="dep-filters"></div>
+      <div id="dep-list" class="pmt-grid"></div>
+    </div>
+
+    <!-- ════════════ BILAN ════════════ -->
+    <div class="page" id="page-bilan">
+      <div class="page-title">
+        <div class="bilan-view-nav">
+          <button class="bilan-nav-arrow" onclick="prevBilanView()">‹</button>
+          <h1 id="bilan-page-title">📈 Bilan mensuel</h1>
+          <button class="bilan-nav-arrow" onclick="nextBilanView()">›</button>
+        </div>
+      </div>
+
+      <div id="bil-mensuel">
+      <div class="bil-grid">
+        <!-- Colonne gauche : résumé chiffré -->
+        <div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-header"><span class="card-title">Résumé financier</span></div>
+            <div class="card-body">
+              <div class="bil-rows">
+                <div class="bil-row green" id="bil-row-solde-actuel">
+                  <div><div class="bil-row-label">💳 Solde actuel</div><div class="bil-row-sub">Solde du compte bancaire</div></div>
+                  <div class="bil-val positive" id="bil-solde-actuel">0,00 €</div>
+                </div>
+                <div class="bil-row green bil-row-link" onclick="navigateTo('revenus')">
+                  <div class="bil-row-with-op">
+                    <span class="bil-op">+</span>
+                    <div><div class="bil-row-label">💰 Revenus</div><div class="bil-row-sub">Entrées d'argent ce mois</div></div>
+                  </div>
+                  <div class="bil-val positive" id="bil-revenus">0,00 €</div>
+                </div>
+                <div class="bil-row blue bil-row-link" onclick="navigateTo('credits')">
+                  <div class="bil-row-with-op">
+                    <span class="bil-op">−</span>
+                    <div><div class="bil-row-label">💳 Crédits</div><div class="bil-row-sub">Remboursements mensuels</div></div>
+                  </div>
+                  <div class="bil-val col-blue" id="bil-credits">0,00 €</div>
+                </div>
+                <div class="bil-row blue bil-row-link" onclick="navigateTo('paiements')">
+                  <div class="bil-row-with-op">
+                    <span class="bil-op">−</span>
+                    <div><div class="bil-row-label">📋 Paiements récurrents</div><div class="bil-row-sub">Loyer, énergie, abonnements…</div></div>
+                  </div>
+                  <div class="bil-val col-blue" id="bil-pmt">0,00 €</div>
+                </div>
+                <div class="bil-row orange bil-row-link" onclick="navigateTo('depenses')">
+                  <div class="bil-row-with-op">
+                    <span class="bil-op">−</span>
+                    <div><div class="bil-row-label">🛒 Dépenses variables</div><div class="bil-row-sub">Courses, carburant, loisirs…</div></div>
+                  </div>
+                  <div class="bil-val col-orange" id="bil-dep">0,00 €</div>
+                </div>
+                <div class="bil-formula-sep"></div>
+                <div class="bil-row green result">
+                  <div class="bil-row-with-op">
+                    <span class="bil-op">=</span>
+                    <div><div class="bil-row-label">📊 Solde estimé</div><div class="bil-row-sub">Solde actuel + revenus − charges</div></div>
+                  </div>
+                  <div class="bil-val positive" id="bil-solde">0,00 €</div>
+                </div>
+              </div>
+
+              <div class="budget-wrap">
+                <div class="budget-label">Utilisation du budget</div>
+                <div class="budget-bar-bg">
+                  <div class="budget-bar-fill" id="bil-budget-bar" style="width:0%"></div>
+                </div>
+                <div class="budget-pct" id="bil-budget-pct">0% du budget utilisé</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Détail par catégorie -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">Dépenses par catégorie</span></div>
+            <div class="card-body">
+              <table class="bil-cat-table"><tbody id="bil-cat-table"></tbody></table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Colonne droite : graphique -->
+        <div class="card">
+          <div class="card-header" id="bil-chart-header"><span class="card-title">Vue graphique</span></div>
+          <div class="card-body" id="bil-chart-body">
+            <canvas id="bilanChart"></canvas>
+          </div>
+        </div>
+      </div>
+      </div><!-- /bil-mensuel -->
+
+      <div id="bil-annuel" style="display:none"></div>
+    </div>
+
+    <!-- ════════════ BILAN DES COMPTES ════════════ -->
+    <div class="page" id="page-bilan-comptes">
+      <div class="page-title"><h1 id="bilan-comptes-title">🏦 Bilan des comptes</h1></div>
+      <div id="bilan-comptes-body"></div>
+    </div>
+
+    <!-- ── Paramètres ───────────────────────────────────────────────────────── -->
+    <div class="page" id="page-parametres">
+      <div class="page-title"><h1>⚙️ Paramètres</h1></div>
+      <div class="card" style="max-width:520px">
+        <div class="card-header">
+          <span class="card-title">🏦 Mes comptes</span>
+          <button class="btn btn-sm btn-primary" id="param-add-compte-btn" onclick="openCompteModal()">+ Ajouter</button>
+        </div>
+        <div class="card-body" style="padding:12px 20px">
+          <div id="param-comptes-list"></div>
+        </div>
+      </div>
+      <div class="card" style="max-width:520px;margin-top:16px">
+        <div class="card-header"><span class="card-title">🗂️ Données</span></div>
+        <div class="card-body" style="padding:20px;display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn-secondary" onclick="exportData()" style="justify-content:flex-start;gap:8px">💾 Exporter mes données</button>
+          <button class="btn btn-secondary" onclick="importData()" style="justify-content:flex-start;gap:8px">📂 Importer des données</button>
+          <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleImportFile(this)">
+          <button class="btn" onclick="resetData()" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;justify-content:flex-start;gap:8px">🗑️ Réinitialiser les données</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- ═══════════════════════════════════════════════════════ MODAL ═════════════ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="modal-title">Titre</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Menu contextuel clic droit -->
+<div id="context-menu" class="context-menu">
+  <button class="ctx-item" onclick="ctxEdit()">✏️ Modifier</button>
+</div>
+
+<!-- Toast notifications -->
+<div class="toast" id="toast"></div>
+
+<!-- Sort dropdown (placé dans body pour éviter tout conflit de stacking) -->
+<div class="sort-menu" id="pmt-sort-menu">
+  <button onclick="setPmtSort('desc')"  data-sort="desc">↓ Montant décroissant</button>
+  <button onclick="setPmtSort('asc')"   data-sort="asc">↑ Montant croissant</button>
+  <button onclick="setPmtSort('alpha')" data-sort="alpha">A→Z Alphabétique</button>
+</div>
+
+<!-- Scripts -->
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
