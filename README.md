@@ -143,6 +143,8 @@ Ouvrez `index.html` dans n'importe quel navigateur moderne — aucune dépendanc
 
 Le fichier JSON est lisible et modifiable directement — aucun format propriétaire.
 
+**Changer de PC :** le `.exe` seul ne suffit pas — les données restent sur la machine d'origine. Pour migrer, utilisez **Paramètres → Exporter** pour télécharger votre `compta.json`, copiez-le sur le nouveau PC, puis **Paramètres → Importer** depuis la nouvelle installation.
+
 ---
 
 ## Stack technique
